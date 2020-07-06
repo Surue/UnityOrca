@@ -124,8 +124,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b816ad4f3d21056d19a627121647cff7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius_: 0.5
-  timeHorizon_: 1
+  radius_: 0.6
+  timeHorizon_: 5
   neighborsDist_: 15
   maxNeighbors_: 10
   maxSpeed_: 5

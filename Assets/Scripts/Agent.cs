@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 
 public class Agent : MonoBehaviour {
     [Header("ORCA")] 
@@ -19,9 +20,9 @@ public class Agent : MonoBehaviour {
 
     private Rigidbody body_;
     private Vector3 target_;
-    private Vector3 velocity_;
-    private Vector3 desiredVelocity_;
-    private Vector3 newVelocity_;
+    private Vector2 velocity_;
+    private Vector2 desiredVelocity_;
+    private Vector2 newVelocity_;
 
     // Start is called before the first frame update
     void Start()
@@ -78,21 +79,23 @@ public class Agent : MonoBehaviour {
         }
 
         //Update movement
-        float dist = Vector3.Distance(transform.position, target_);
+        float dist = Vector2.Distance(transform.position, target_);
 
         if (dist < stopDistance)
         {
-            desiredVelocity_ = Vector3.zero;
+            desiredVelocity_ = Vector2.zero;
         }else if (dist < arriveDistance)
         {
-            desiredVelocity_ = (target_ - transform.position).normalized * maxSpeed_ * (dist / arriveDistance);
+            Vector3 vel = (target_ - transform.position).normalized * maxSpeed_ * (dist / arriveDistance);
+            desiredVelocity_ = new Vector2(vel.x, vel.z);
         }
         else
         {
-            desiredVelocity_ = (target_ - transform.position).normalized * maxSpeed_;
+            Vector3 vel = (target_ - transform.position).normalized * maxSpeed_;
+            desiredVelocity_ = new Vector2(vel.x, vel.z);
         }
 
-        if (desiredVelocity_ == Vector3.zero)
+        if (desiredVelocity_ == Vector2.zero)
         {
             return;
         }
@@ -103,35 +106,36 @@ public class Agent : MonoBehaviour {
         //Update velocity by looking at other agents
         orcaLines_.Clear();
         float invTimeHorizon = 1.0f / timeHorizon_;
-        for (int i = 0; i < agentNeighbors_.Count; ++i)
+        foreach (var pair in agentNeighbors_)
         {
-            Agent otherAgent = agentNeighbors_[i].Value;
+            Agent otherAgent = pair.Value;
 
-            Vector3 relativePosition = otherAgent.transform.position - transform.position;
-            Vector3 relativeVelocity = velocity_ - otherAgent.velocity_;
+            Vector3 relPos = otherAgent.transform.position - transform.position;
+            Vector2 relativePosition = new Vector2(relPos.x, relPos.z);
+            Vector2 relativeVelocity = velocity_ - otherAgent.velocity_;
             float distSqr = relativePosition.sqrMagnitude;
             float combinedRadius = radius_ + otherAgent.radius_;
             float combinedRadiusSqr = Mathf.Pow(combinedRadius, 2);
 
             Line line;
-            Vector3 u;
+            Vector2 u;
 
             if (distSqr > combinedRadiusSqr)
             {
                 // No Collision
-                Vector3 w = relativeVelocity - invTimeHorizon * relativePosition;
+                Vector2 w = relativeVelocity - invTimeHorizon * relativePosition;
                 
                 // Vector from center to relative velocity
                 float wLengthSqr = w.sqrMagnitude;
-                float dotProduct1 = Vector3.Dot(w, relativePosition);
+                float dotProduct1 = Vector2.Dot(w, relativePosition);
 
                 if (dotProduct1 < 0.0f && Mathf.Pow(dotProduct1, 2) > combinedRadiusSqr * wLengthSqr)
                 {
                     //Project on circle
                     float wLength = Mathf.Sqrt(wLengthSqr);
-                    Vector3 unitW = w / wLength;
+                    Vector2 unitW = w / wLength;
                     
-                    line.direction = new Vector3(unitW.z, 0, -unitW.x);
+                    line.direction = new Vector2(unitW.y, -unitW.x);
                     u = (combinedRadius * invTimeHorizon - wLength) * unitW;
                 }
                 else
@@ -141,20 +145,18 @@ public class Agent : MonoBehaviour {
 
                     if (Det(relativePosition, w) > 0.0f)
                     {
-                        line.direction = new Vector3(
-                            relativePosition.x * leg - relativePosition.z * combinedRadius,
-                            0,
-                            relativePosition.x * combinedRadius + relativePosition.z * leg) / distSqr;
+                        line.direction = new Vector2(
+                            relativePosition.x * leg - relativePosition.y * combinedRadius,
+                            relativePosition.x * combinedRadius + relativePosition.y * leg) / distSqr;
                     }
                     else
                     {
-                        line.direction = -new Vector3(
-                            relativePosition.x * leg - relativePosition.z * combinedRadius,
-                            0,
-                            -relativePosition.x * combinedRadius + relativePosition.z * leg) / distSqr;
+                        line.direction = -new Vector2(
+                            relativePosition.x * leg - relativePosition.y * combinedRadius,
+                            -relativePosition.x * combinedRadius + relativePosition.y * leg) / distSqr;
                     }
 
-                    float dotProduct2 = Vector3.Dot(relativeVelocity, line.direction);
+                    float dotProduct2 = Vector2.Dot(relativeVelocity, line.direction);
                     u = dotProduct2 * line.direction - relativeVelocity;
                 }
             }
@@ -163,12 +165,12 @@ public class Agent : MonoBehaviour {
                 //Collision
                 float invTimeStep = 1.0f / Time.deltaTime;
 
-                Vector3 w = relativeVelocity - invTimeStep * relativePosition;
+                Vector2 w = relativeVelocity - invTimeStep * relativePosition;
 
                 float wLength = w.magnitude;
-                Vector3 wUnit = w / wLength;
+                Vector2 wUnit = w / wLength;
                 
-                line.direction = new Vector3(wUnit.z, 0, -wUnit.x);
+                line.direction = new Vector2(wUnit.y, -wUnit.x);
                 u = (combinedRadius * invTimeStep - wLength) * wUnit;
             }
 
@@ -189,14 +191,14 @@ public class Agent : MonoBehaviour {
         velocity_ = newVelocity_;
         
         float yVel = body_.velocity.y;
-        body_.velocity = new Vector3(velocity_.x, yVel, velocity_.z);
-        transform.forward = new Vector3(velocity_.x, 0, velocity_.z);
+        body_.velocity = new Vector3(velocity_.x, yVel, velocity_.y);
+        transform.forward = new Vector3(velocity_.x, 0, velocity_.y);
     }
 
-    private bool LinearProgram1(List<Line> lines, int lineNo, float radius, Vector3 optVelocity, bool directionOpt,
-        ref Vector3 result)
+    private bool LinearProgram1(List<Line> lines, int lineNo, float radius, Vector2 optVelocity, bool directionOpt,
+        ref Vector2 result)
     {
-        float dotProduct = Vector3.Dot(lines[lineNo].startingPoint, lines[lineNo].direction);
+        float dotProduct = Vector2.Dot(lines[lineNo].startingPoint, lines[lineNo].direction);
         float discriminant = Mathf.Pow(dotProduct, 2) + Mathf.Pow(radius, 2) - lines[lineNo].startingPoint.sqrMagnitude;
 
         if (discriminant < 0.0f)
@@ -242,7 +244,7 @@ public class Agent : MonoBehaviour {
 
         if (directionOpt)
         {
-            if (Vector3.Dot(optVelocity, lines[lineNo].direction) > 0.0f)
+            if (Vector2.Dot(optVelocity, lines[lineNo].direction) > 0.0f)
             {
                 result = lines[lineNo].startingPoint + tRight * lines[lineNo].direction;
             }
@@ -252,7 +254,7 @@ public class Agent : MonoBehaviour {
             }
         }else
         {
-            float t = Vector3.Dot(lines[lineNo].direction, optVelocity - lines[lineNo].startingPoint);
+            float t = Vector2.Dot(lines[lineNo].direction, optVelocity - lines[lineNo].startingPoint);
 
             if (t < tLeft)
             {
@@ -270,7 +272,7 @@ public class Agent : MonoBehaviour {
         return true;
     }
 
-    private int LinearProgram2(List<Line> lines, float radius, Vector3 optVelocity, bool directionOpt, ref Vector3 result)
+    private int LinearProgram2(List<Line> lines, float radius, Vector2 optVelocity, bool directionOpt, ref Vector2 result)
     {
         if (directionOpt)
         {
@@ -288,7 +290,7 @@ public class Agent : MonoBehaviour {
         {
             if (Det(lines[i].direction, lines[i].startingPoint - result) > 0.0f)
             {
-                Vector3 tmpResult = result;
+                Vector2 tmpResult = result;
                 if (!LinearProgram1(lines, i, radius, optVelocity, directionOpt, ref result))
                 {
                     result = tmpResult;
@@ -300,7 +302,7 @@ public class Agent : MonoBehaviour {
         return lines.Count;
     }
 
-    private void LinearProgram3(List<Line> lines, int nbObstacleLine, int beginLine, float radius, ref Vector3 result)
+    private void LinearProgram3(List<Line> lines, int nbObstacleLine, int beginLine, float radius, ref Vector2 result)
     {
         float distance = 0.0f;
 
@@ -322,15 +324,13 @@ public class Agent : MonoBehaviour {
 
                     if (Mathf.Abs(determinant) <= 0.000001f)
                     {
-                        if (Vector3.Dot(lines[i].direction, lines[j].direction) > 0.0f)
+                        if (Vector2.Dot(lines[i].direction, lines[j].direction) > 0.0f)
                         {
                             //Line i and j are in the same direction
                             continue;
                         }
-                        else
-                        {
-                            line.startingPoint = 0.5f * (lines[i].startingPoint + lines[j].startingPoint);
-                        }
+
+                        line.startingPoint = 0.5f * (lines[i].startingPoint + lines[j].startingPoint);
                     }
                     else
                     {
@@ -343,8 +343,8 @@ public class Agent : MonoBehaviour {
                     projectedLines.Add(line);
                 }
 
-                Vector3 tmpResult = result;
-                if (LinearProgram2(projectedLines, radius, new Vector3(-lines[i].direction.z, 0, lines[i].direction.x),
+                Vector2 tmpResult = result;
+                if (LinearProgram2(projectedLines, radius, new Vector2(-lines[i].direction.y, lines[i].direction.x),
                     true, ref result) < projectedLines.Count)
                 {
                     result = tmpResult;
@@ -355,9 +355,9 @@ public class Agent : MonoBehaviour {
         }
     }
 
-    private float Det(Vector3 v1, Vector3 v2)
+    private float Det(Vector2 v1, Vector2 v2)
     {
-        return v1.x * v2.z - v1.z * v2.x;
+        return v1.x * v2.y - v1.y * v2.x;
     }
 
     public void SetTarget(Vector3 newTarget)
