@@ -52,6 +52,11 @@ public class ObstacleManager : MonoBehaviour {
 
         return obstacleNb;
     }
+
+    public List<Obstacle> GetObstacles()
+    {
+        return obstacles_;
+    }
     
     static float Det(Vector2 v1, Vector2 v2)
     {

@@ -92,31 +92,12 @@ public class GroupFormation : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            targetsPositionFormation_[0] = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        }
-        
-        //ORCA
-        
-        
-        
-        //Check for obstacle
-        for (int i = 1; i < nbAgent_; i++)
-        {
-            var t = agents_[i].transform;
-            // for (int x = -1; x <= 1; x++)
-            // {
-            //     Debug.DrawLine(t.position + desiredVelocities_[i].normalized * 0.51f + t.right * (x * 0.5f),
-            //         t.position + desiredVelocities_[i].normalized * 0.51f +
-            //         desiredVelocities_[i].normalized * (agentSpacing_ * 0.4f) + t.right * (x * 0.5f));
-            //     
-            //     if (Physics.Raycast(t.position + desiredVelocities_[i].normalized * 0.51f + t.right * (x * 0.5f),
-            //         desiredVelocities_[i].normalized, agentSpacing_ * 0.4f))
-            //     {
-            //         // desiredVelocities_[i] = desiredVelocities_[i] * 0.5f;
-            //         desiredVelocities_[i] += t.right * avoidanceSpeed_;
-            //         // break;
-            //     }
-            // }
+            Vector3 target = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            if (Physics.Raycast(target, target - Camera.main.transform.position, out RaycastHit hit))
+            {
+                Debug.Log("hit");
+                targetsPositionFormation_[0] = hit.point;
+            }
         }
     }
 
@@ -164,6 +145,11 @@ public class GroupFormation : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (agents_ == null || agents_.Count == 0) return; 
+        
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(agents_[0].GetTarget(), 0.5f);
+        
+        Gizmos.color = Color.white;
         
         switch (shape_)
         {
