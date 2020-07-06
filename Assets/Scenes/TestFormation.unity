@@ -250,7 +250,7 @@ MonoBehaviour:
   nbAgent_: 10
   speedForming_: 2
   speedFormed_: 5
-  agentSpacing_: 2
+  agentSpacing_: 3
   avoidanceSpeed_: 3
 --- !u!4 &843629528
 Transform:
