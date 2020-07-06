@@ -9,6 +9,7 @@ public class GroupFormation : MonoBehaviour
 {
     [Serializable]
     enum Shape {
+        NONE,
         SQUARE,
         LINE,
         COLUMN
@@ -92,10 +93,9 @@ public class GroupFormation : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            Vector3 target = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            if (Physics.Raycast(target, target - Camera.main.transform.position, out RaycastHit hit))
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                Debug.Log("hit");
                 targetsPositionFormation_[0] = hit.point;
             }
         }
@@ -105,6 +105,9 @@ public class GroupFormation : MonoBehaviour
     {
         switch (shape_)
         {
+            case Shape.NONE:
+                return agents_[0].transform.position;
+                break;
             case Shape.SQUARE:
                 int maxCol = Mathf.FloorToInt(Mathf.Sqrt(nbAgent_));
 
@@ -153,6 +156,8 @@ public class GroupFormation : MonoBehaviour
         
         switch (shape_)
         {
+            case Shape.NONE:
+                break;
             case Shape.SQUARE:
                 int maxRow = Mathf.CeilToInt(Mathf.Sqrt(nbAgent_));
                 int maxCol = Mathf.FloorToInt(Mathf.Sqrt(nbAgent_));

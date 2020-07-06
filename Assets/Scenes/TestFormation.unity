@@ -1040,7 +1040,7 @@ MonoBehaviour:
   prefabAgent_: {fileID: 877940369472813675, guid: e4d6b9dd32cf28c28a7e171dfa5ea4ea,
     type: 3}
   shape_: 0
-  nbAgent_: 20
+  nbAgent_: 5
   speedForming_: 2
   speedFormed_: 5
   agentSpacing_: 3
@@ -1484,7 +1484,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1281975828}
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 14.38, z: -10}
+  m_LocalPosition: {x: -6.29, y: 35.9, z: -4.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

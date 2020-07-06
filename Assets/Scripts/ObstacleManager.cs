@@ -18,7 +18,7 @@ public class ObstacleManager : MonoBehaviour {
         for (int i = 0; i < vertices.Count; ++i)
         {
             Obstacle obstacle = new Obstacle();
-            obstacle.line.startingPoint = vertices[i];
+            obstacle.line.point = vertices[i];
 
             if (i != 0)
             {
@@ -74,7 +74,7 @@ public class ObstacleManager : MonoBehaviour {
 
         foreach (var obstacle in obstacles_)
         {
-            Gizmos.DrawLine(Vector3.zero, new Vector3(obstacle.line.startingPoint.x, 0, obstacle.line.startingPoint.y));
+            Gizmos.DrawLine(Vector3.zero, new Vector3(obstacle.line.point.x, 0, obstacle.line.point.y));
         }
     }
 }
